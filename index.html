@@ -290,7 +290,7 @@
             </table>
           </div>
 
-          <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="margin-top: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <button class="btn red darken-3 waves-effect waves-light" onclick="deal()">
               <i class="material-icons left">shuffle</i>Deal Hand
             </button>
@@ -301,6 +301,15 @@
                 <span class="lever"></span>
               </label>
               <span style="font-size:14px; color:#555;">Going 2nd (6)</span>
+            </div>
+            <div style="margin-left:auto; display:flex; gap:8px;">
+              <button class="btn green darken-2 waves-effect waves-light" onclick="exportDeck()">
+                <i class="material-icons left">download</i>Export
+              </button>
+              <button class="btn teal darken-2 waves-effect waves-light" onclick="document.getElementById('import-input').click()">
+                <i class="material-icons left">upload</i>Import
+              </button>
+              <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importDeck(event)" />
             </div>
           </div>
 
@@ -485,6 +494,58 @@
       const src = imgPath(name);
       return `<img src="${src}" alt="${htmlEsc(name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
               <div class="no-img" style="display:none;"><i class="material-icons">style</i></div>`;
+    }
+
+    function exportDeck() {
+      if (deckTotal() === 0) {
+        M.toast({ html: 'Your deck is empty — nothing to export.', classes: 'red darken-3' });
+        return;
+      }
+
+      const data = Object.entries(deck).map(([name, { qty, type }]) => ({ name, qty, type }));
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'deck.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      M.toast({ html: 'Deck exported as deck.json', classes: 'green darken-2' });
+    }
+
+    function importDeck(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+
+          if (!Array.isArray(data)) throw new Error('Expected a JSON array.');
+
+          const newDeck = {};
+          for (const entry of data) {
+            if (typeof entry.name !== 'string' || !entry.name.trim()) throw new Error('Each card must have a "name" string.');
+            if (typeof entry.qty  !== 'number' || entry.qty < 1 || entry.qty > 3) throw new Error(`Invalid qty for "${entry.name}" — must be 1, 2, or 3.`);
+            if (!['Monster', 'Spell', 'Trap'].includes(entry.type)) throw new Error(`Invalid type for "${entry.name}" — must be Monster, Spell, or Trap.`);
+            newDeck[entry.name.trim()] = { qty: entry.qty, type: entry.type };
+          }
+
+          const total = Object.values(newDeck).reduce((s, c) => s + c.qty, 0);
+          if (total > 60) throw new Error(`Deck has ${total} cards — exceeds the 60-card limit.`);
+
+          deck = newDeck;
+          renderDeck();
+          M.toast({ html: `Imported ${data.length} card entries (${total} total cards).`, classes: 'teal darken-2' });
+        } catch (err) {
+          M.toast({ html: `Import failed: ${err.message}`, classes: 'red darken-3' });
+        }
+
+        // Reset input so the same file can be re-imported if needed
+        event.target.value = '';
+      };
+      reader.readAsText(file);
     }
 
     function jsEsc(str)   { return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
