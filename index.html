@@ -336,9 +336,9 @@
       { name: 'PSY-Framegear Gamma',             qty: 1, type: 'Monster' },
       { name: 'PSY-Framegear Delta',             qty: 2, type: 'Monster' },
       { name: 'PSY-Frame Driver',                qty: 1, type: 'Monster' },
-      { name: 'Ash Blossom and Joyous Spring',   qty: 3, type: 'Monster' },
-      { name: 'Ghost Belle and Haunted Mansion', qty: 3, type: 'Monster' },
-      { name: 'Ghost Ogre and Snow Rabbit',      qty: 2, type: 'Monster' },
+      { name: 'Ash Blossom & Joyous Springs',    qty: 3, type: 'Monster' },
+      { name: 'Ghost Belle & Haunted Mansion',   qty: 3, type: 'Monster' },
+      { name: 'Ghost Ogre & Snow Rabbit',        qty: 2, type: 'Monster' },
       { name: 'Effect Veiler',                   qty: 3, type: 'Monster' },
       { name: 'Droll & Lock Bird',               qty: 2, type: 'Monster' },
       // Spells
@@ -346,7 +346,7 @@
       { name: 'Kewl Tune Synchro',               qty: 3, type: 'Spell' },
       { name: 'Duelist Genesis',                 qty: 2, type: 'Spell' },
       { name: 'Called by the Grave',             qty: 1, type: 'Spell' },
-      { name: '"JJ" Kewl Tune',                  qty: 1, type: 'Spell' },
+      { name: 'JJ Kewl Tune',                     qty: 1, type: 'Spell' },
       // Traps
       { name: 'Infinite Impermanence',           qty: 3, type: 'Trap'  },
     ];
@@ -472,8 +472,13 @@
       section.scrollIntoView({ behavior: 'smooth' });
     }
 
+    const IMG_EXT_OVERRIDES = {
+      'PSY-Frame Driver': 'webp',
+    };
+
     function imgPath(name) {
-      return 'Images/' + name.replace(/ /g, '-') + '.jpg';
+      const ext = IMG_EXT_OVERRIDES[name] || 'jpg';
+      return 'Images/' + name + '.' + ext;
     }
 
     function imgThumb(name) {
