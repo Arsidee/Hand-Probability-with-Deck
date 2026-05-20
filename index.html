@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YGO Hand Probability with Deck</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #f5f5f5;
+    }
+
+    nav {
+      background-color: #b71c1c;
+    }
+
+    nav .brand-logo {
+      padding-left: 20px;
+    }
+
+    .section-title {
+      color: #b71c1c;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .deck-counter {
+      font-size: 15px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .deck-counter strong {
+      font-size: 18px;
+      color: #b71c1c;
+    }
+
+    .add-card-form {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .add-card-form .input-field {
+      margin: 0;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .add-card-form .select-wrapper-sm {
+      min-width: 80px;
+    }
+
+    .add-card-form .select-wrapper-md {
+      min-width: 120px;
+    }
+
+    .deck-table-wrap {
+      overflow-x: auto;
+    }
+
+    table.deck-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    table.deck-table thead tr {
+      background-color: #b71c1c;
+      color: white;
+    }
+
+    table.deck-table thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    table.deck-table tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    table.deck-table tbody tr:hover {
+      background-color: #fff3f3;
+    }
+
+    table.deck-table tbody td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+
+    table.deck-table .td-qty {
+      font-weight: 600;
+      width: 50px;
+    }
+
+    table.deck-table .td-type {
+      width: 90px;
+    }
+
+    .type-badge {
+      display: inline-block;
+      border-radius: 10px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .type-monster { background-color: #fff3cd; color: #856404; }
+    .type-spell   { background-color: #d1f0d6; color: #1a6b30; }
+    .type-trap    { background-color: #f8d7da; color: #842029; }
+
+    .remove-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #bbb;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .remove-icon-btn:hover {
+      color: #b71c1c;
+    }
+
+    .empty-table-row td {
+      text-align: center;
+      color: #bbb;
+      padding: 24px 0;
+      font-size: 13px;
+    }
+
+    .hand-card {
+      background: white;
+      border-radius: 8px;
+      padding: 14px 18px;
+      min-width: 130px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: 4px solid #1a237e;
+    }
+
+    .hand-card-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #222;
+    }
+
+    @media (max-width: 600px) {
+      .add-card-form { flex-direction: column; }
+      .add-card-form .input-field,
+      .add-card-form .select-wrapper-sm,
+      .add-card-form .select-wrapper-md { min-width: 100%; width: 100%; }
+      .hand-card { min-width: calc(50% - 6px); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo">
+        <i class="material-icons" style="vertical-align:middle; margin-right:8px;">style</i>
+        YGO Hand Sim — with Deck
+      </a>
+    </div>
+  </nav>
+
+  <div class="container" style="margin-top: 30px; margin-bottom: 60px;">
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel" style="border-left: 4px solid #b71c1c;">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <h5 class="section-title" style="margin:0;">
+              <i class="material-icons" style="vertical-align:middle;">library_books</i>
+              Deck Builder
+            </h5>
+            <button class="btn blue darken-4 waves-effect waves-light" onclick="loadPremadeDeck()">
+              <i class="material-icons left">auto_awesome</i>Premade Deck
+            </button>
+          </div>
+
+          <p class="deck-counter">
+            Total Cards in Deck: <strong id="deck-total">0</strong> / 60
+          </p>
+
+          <div class="add-card-form">
+            <div class="input-field">
+              <input id="new-card-name" type="text" placeholder="e.g. Ash Blossom" />
+              <label for="new-card-name">Card Name</label>
+            </div>
+
+            <div class="input-field select-wrapper-sm">
+              <select id="new-card-qty">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="3" selected>3x</option>
+              </select>
+              <label>Qty</label>
+            </div>
+
+            <div class="input-field select-wrapper-md">
+              <select id="new-card-type">
+                <option value="Monster">Monster</option>
+                <option value="Spell">Spell</option>
+                <option value="Trap">Trap</option>
+              </select>
+              <label>Type</label>
+            </div>
+
+            <button class="btn red darken-3 waves-effect waves-light" onclick="addCard()">
+              <i class="material-icons left">add</i>Add
+            </button>
+          </div>
+
+          <div class="deck-table-wrap">
+            <table class="deck-table">
+              <thead>
+                <tr>
+                  <th>Card Name</th>
+                  <th class="td-type">Type</th>
+                  <th class="td-qty">Qty</th>
+                  <th style="width:36px;"></th>
+                </tr>
+              </thead>
+              <tbody id="deck-tbody">
+                <tr class="empty-table-row">
+                  <td colspan="4">No cards added yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <button class="btn red darken-3 waves-effect waves-light" onclick="deal()">
+              <i class="material-icons left">shuffle</i>Deal Hand
+            </button>
+            <div class="switch" style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:14px; color:#555;">Going 1st (5)</span>
+              <label>
+                <input type="checkbox" id="going-second-toggle" />
+                <span class="lever"></span>
+              </label>
+              <span style="font-size:14px; color:#555;">Going 2nd (6)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Opening Hand -->
+    <div class="row" id="hand-section" style="display:none;">
+      <div class="col s12">
+        <div class="card-panel" style="border-left: 4px solid #1a237e;">
+          <h5 class="section-title" style="color:#1a237e;">
+            <i class="material-icons" style="vertical-align:middle;">front_hand</i>
+            Opening Hand
+          </h5>
+          <div id="hand-cards" style="display:flex; flex-wrap:wrap; gap:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <script>
+    const PREMADE_DECK = [
+      // Monsters
+      { name: 'Kewl Tune Cue',                   qty: 3, type: 'Monster' },
+      { name: 'Kewl Tune Mix',                   qty: 3, type: 'Monster' },
+      { name: 'Kewl Tune Clip',                  qty: 1, type: 'Monster' },
+      { name: 'Kewl Tune Reco',                  qty: 3, type: 'Monster' },
+      { name: 'Kewl Tune Rotary',                qty: 3, type: 'Monster' },
+      { name: 'PSY-Framegear Gamma',             qty: 1, type: 'Monster' },
+      { name: 'PSY-Framegear Delta',             qty: 2, type: 'Monster' },
+      { name: 'PSY-Frame Driver',                qty: 1, type: 'Monster' },
+      { name: 'Ash Blossom and Joyous Spring',   qty: 3, type: 'Monster' },
+      { name: 'Ghost Belle and Haunted Mansion', qty: 3, type: 'Monster' },
+      { name: 'Ghost Ogre and Snow Rabbit',      qty: 2, type: 'Monster' },
+      { name: 'Effect Veiler',                   qty: 3, type: 'Monster' },
+      { name: 'Droll & Lock Bird',               qty: 2, type: 'Monster' },
+      // Spells
+      { name: 'Synchro Overtake',                qty: 1, type: 'Spell' },
+      { name: 'Kewl Tune Synchro',               qty: 3, type: 'Spell' },
+      { name: 'Duelist Genesis',                 qty: 2, type: 'Spell' },
+      { name: 'Called by the Grave',             qty: 1, type: 'Spell' },
+      { name: '"JJ" Kewl Tune',                  qty: 1, type: 'Spell' },
+      // Traps
+      { name: 'Infinite Impermanence',           qty: 3, type: 'Trap'  },
+    ];
+
+    // { name: { qty: number, type: string } }
+    let deck = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+      M.FormSelect.init(document.querySelectorAll('select'));
+      document.getElementById('new-card-name').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addCard();
+      });
+    });
+
+    function loadPremadeDeck() {
+      deck = {};
+      for (const card of PREMADE_DECK) {
+        deck[card.name] = { qty: card.qty, type: card.type };
+      }
+      renderDeck();
+      M.toast({ html: 'Premade deck loaded — 41 cards ready!', classes: 'blue darken-4' });
+    }
+
+    function addCard() {
+      const nameInput = document.getElementById('new-card-name');
+      const name = nameInput.value.trim();
+      if (!name) {
+        M.toast({ html: 'Please enter a card name.', classes: 'red darken-3' });
+        return;
+      }
+
+      const qty  = parseInt(document.getElementById('new-card-qty').value);
+      const type = document.getElementById('new-card-type').value;
+
+      if (deckTotal() - (deck[name] ? deck[name].qty : 0) + qty > 60) {
+        M.toast({ html: 'Deck cannot exceed 60 cards.', classes: 'red darken-3' });
+        return;
+      }
+
+      deck[name] = { qty, type };
+      nameInput.value = '';
+      M.FormSelect.init(document.querySelectorAll('select'));
+      renderDeck();
+    }
+
+    function removeCard(name) {
+      delete deck[name];
+      renderDeck();
+    }
+
+    function deckTotal() {
+      return Object.values(deck).reduce((s, c) => s + c.qty, 0);
+    }
+
+    function renderDeck() {
+      const total = deckTotal();
+      document.getElementById('deck-total').textContent = total;
+
+      const tbody = document.getElementById('deck-tbody');
+      const names = Object.keys(deck);
+
+      if (names.length === 0) {
+        tbody.innerHTML = '<tr class="empty-table-row"><td colspan="4">No cards added yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = names.map(name => {
+        const { qty, type } = deck[name];
+        return `
+          <tr>
+            <td>${htmlEsc(name)}</td>
+            <td class="td-type"><span class="type-badge type-${type.toLowerCase()}">${type}</span></td>
+            <td class="td-qty">${qty}x</td>
+            <td>
+              <button class="remove-icon-btn" onclick="removeCard('${jsEsc(name)}')" title="Remove">
+                <i class="material-icons small">close</i>
+              </button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function deal() {
+      const total = deckTotal();
+
+      if (total < 40) {
+        M.toast({ html: `Deck needs at least 40 cards — you have ${total}.`, classes: 'red darken-3' });
+        return;
+      }
+      if (total > 60) {
+        M.toast({ html: `Deck is an illegal size (${total} cards). Max is 60.`, classes: 'red darken-3' });
+        return;
+      }
+
+      const handSize = document.getElementById('going-second-toggle').checked ? 6 : 5;
+
+      // Build and shuffle full deck
+      const fullDeck = [];
+      for (const name of Object.keys(deck)) {
+        for (let i = 0; i < deck[name].qty; i++) {
+          fullDeck.push({ name, type: deck[name].type });
+        }
+      }
+      for (let i = fullDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [fullDeck[i], fullDeck[j]] = [fullDeck[j], fullDeck[i]];
+      }
+
+      const hand = fullDeck.slice(0, handSize);
+
+      const container = document.getElementById('hand-cards');
+      container.innerHTML = hand.map(card => `
+        <div class="hand-card">
+          <span class="hand-card-name">${htmlEsc(card.name)}</span>
+          <span class="type-badge type-${card.type.toLowerCase()}">${card.type}</span>
+        </div>
+      `).join('');
+
+      const section = document.getElementById('hand-section');
+      section.style.display = 'block';
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function jsEsc(str)   { return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+    function htmlEsc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  </script>
+
+</body>
+</html>
